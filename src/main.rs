@@ -23,7 +23,7 @@ fn main() -> std::io::Result<()> {
         println!("Not supported on this platform");
     }
     // Linux => btime field of statx
-    // Linux => birthtime field of stat
+    // Unix => birthtime field of stat
     // Windows => ftCreationTime
     if let Ok(time) = md.created() {
         println!("created time{:?}", time);
