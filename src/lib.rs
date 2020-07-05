@@ -12,11 +12,7 @@ pub struct Args {
 }
 
 pub fn run(args: Args) -> std::io::Result<()> {
-    // println!("Value for file: {}", args.file);
-
-    // let path = Path::new(&args.file);
     let md = args.path.metadata()?;
-    // fs::metadata("derse.txt")?;
 
     println!("file type: {:?}", md.file_type());
     println!("is directory?: {:?}", md.is_dir());
