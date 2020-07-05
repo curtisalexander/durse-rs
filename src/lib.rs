@@ -1,21 +1,21 @@
-use std::path::Path;
-
 use clap::Clap;
+
+use std::path::PathBuf;
 
 /// Get directory metadata
 #[derive(Clap)]
 // #[clap(version = "0.1.0", author = "Curtis Alexander <calex@calex.org>")]
 pub struct Args {
-    /// File for which to acquire metadata
+    /// Path to acquire metadata
     #[clap(long, short)]
-    pub file: String,
+    pub path: PathBuf,
 }
 
 pub fn run(args: Args) -> std::io::Result<()> {
-    println!("Value for file: {}", args.file);
+    // println!("Value for file: {}", args.file);
 
-    let path = Path::new(&args.file);
-    let md = path.metadata()?;
+    // let path = Path::new(&args.file);
+    let md = args.path.metadata()?;
     // fs::metadata("derse.txt")?;
 
     println!("file type: {:?}", md.file_type());
