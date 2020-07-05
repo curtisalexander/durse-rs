@@ -28,8 +28,6 @@ OPTIONS:
 
 Would like to adapt the following PowerShell one-liner.
 
-> **NOTE:** The [Get-Acl]() cmdlet only works on Windows.  For details one getting file permissions on Linux or macOS, see [Working with Linux Permissions in PowerShell 7](https://petri.com/working-with-linux-permissions-in-powershell-7).
-
 ```powershell
 $SearchDir = "/some/path"
 $OutCSV = "results.csv"
@@ -39,3 +37,5 @@ Select-Object FullName, Name, Basename, Extension, DirectoryName, CreationTime, 
 @{Name = 'Owner' ; Expression = { $(Get-Acl $_).Owner } }, @{Name = 'Size KB'; Expression = { $_.Length / 1KB } } |
 Export-Csv -Path $OutCSV -NoTypeInformation
 ```
+
+> **NOTE:** The [Get-Acl]() cmdlet only works on Windows.  For details one getting file permissions on Linux or macOS, see [Working with Linux Permissions in PowerShell 7](https://petri.com/working-with-linux-permissions-in-powershell-7).
