@@ -1,6 +1,8 @@
-use clap::Clap;
-
+use std::error::Error;
 use std::path::PathBuf;
+
+use clap::Clap;
+use serde::Serialize;
 
 /// Get directory metadata
 #[derive(Clap)]
@@ -9,11 +11,54 @@ pub struct Args {
     /// Path to acquire metadata
     #[clap(long, short)]
     pub path: PathBuf,
+    /// Path to csv file to write
+    #[clap(long, short)]
+    pub csv: PathBuf,
 }
 
-pub fn run(args: Args) -> std::io::Result<()> {
-    let md = args.path.metadata()?;
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "PascalCase")]
+pub struct Record<'a> {
+    pub name: &'a str,
+    pub size: u64,
+}
 
+pub fn run(args: Args) -> Result<(), Box<dyn Error>> {
+    // pub fn run(args: Args) -> std::io::Result<()> {
+    // Implement the following:
+    // - FullName
+    // - Name
+    // - Basename
+    // - Extension
+    // - DirectoryName
+    // - CreationTime
+    // - LastAccessTime
+    // - LastWriteTime
+    // - Owner
+    // - Size B
+    // - Size KB (distinguish Kilobyes from Kibibytes)
+    // - Size MB
+    // - Size GB
+
+    // let mut wtr = csv::Writer::from_path(args.csv)?;
+    let mut wtr = csv::WriterBuilder::new()
+        .quote_style(csv::QuoteStyle::Always)
+        .from_path(args.csv)?;
+
+    // MVP
+    // - Name
+    // - Size
+    let md = args.path.metadata()?;
+    let name = args.path.to_str().unwrap_or_default();
+    let size = md.len();
+
+    let r = Record { name, size };
+    println!("Record: {:?}", r);
+
+    wtr.serialize(r)?;
+    wtr.flush()?;
+    Ok(())
+    /*
     println!("file type: {:?}", md.file_type());
     println!("is directory?: {:?}", md.is_dir());
     println!("is file?: {:?}", md.is_file());
@@ -41,7 +86,7 @@ pub fn run(args: Args) -> std::io::Result<()> {
     } else {
         println!("Not supported on this platform");
     }
-    Ok(())
+    */
 }
 
 #[cfg(test)]
