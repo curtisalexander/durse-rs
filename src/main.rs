@@ -1,7 +1,23 @@
-use std::fs;
+use clap::Clap;
+// use std::fs;
+use std::path::Path;
+
+/// Get directory metadata
+#[derive(Clap)]
+// #[clap(version = "0.1.0", author = "Curtis Alexander <calex@calex.org>")]
+struct Args {
+    /// File for which to acquire metadata
+    #[clap(long, short)]
+    file: String,
+}
 
 fn main() -> std::io::Result<()> {
-    let md = fs::metadata("derse.txt")?;
+    let opts: Args = Args::parse();
+
+    println!("Value for file: {}", opts.file);
+    let path = Path::new(&opts.file);
+    let md = path.metadata()?;
+    // fs::metadata("derse.txt")?;
 
     println!("file type: {:?}", md.file_type());
     println!("is directory?: {:?}", md.is_dir());
