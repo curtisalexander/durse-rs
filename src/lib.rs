@@ -24,7 +24,6 @@ pub struct Record<'a> {
 }
 
 pub fn run(args: Args) -> Result<(), Box<dyn Error>> {
-    // pub fn run(args: Args) -> std::io::Result<()> {
     // Implement the following:
     // - FullName
     // - Name
@@ -46,12 +45,7 @@ pub fn run(args: Args) -> Result<(), Box<dyn Error>> {
     // MVP
     // - Name
     // - Size
-    let md = args.path.metadata()?;
-    let name = args.path.to_str().unwrap_or_default();
-    let size = md.len();
-
-    let r = Record { name, size };
-    // println!("Record: {:?}", r);
+    let r: Record = get_metadata(&args.path)?;
 
     wtr.serialize(r)?;
     wtr.flush()?;
@@ -87,12 +81,23 @@ pub fn run(args: Args) -> Result<(), Box<dyn Error>> {
     */
 }
 
+fn get_metadata(path: &PathBuf) -> Result<Record, Box<dyn Error>> {
+    let md = path.metadata()?;
+    let name: &str = path.to_str().unwrap_or_default();
+    let size = md.len();
+
+    Ok(Record { name, size })
+}
+
 #[cfg(test)]
 mod tests {
-    // use super::*;
+    use super::*;
 
     #[test]
-    fn clap_parsing() {
-        assert_eq!(1, 1);
+    fn get_metadata() {
+        let path = PathBuf::from("derse.txt");
+        let r: Record = super::get_metadata(&path).unwrap();
+        assert_eq!(r.name, "derse.txt");
+        assert_eq!(r.size, 89);
     }
 }
