@@ -39,8 +39,6 @@ pub fn run(args: Args) -> Result<(), Box<dyn Error>> {
     // - Size KB (distinguish Kilobyes from Kibibytes)
     // - Size MB
     // - Size GB
-
-    // let mut wtr = csv::Writer::from_path(args.csv)?;
     let mut wtr = csv::WriterBuilder::new()
         .quote_style(csv::QuoteStyle::Always)
         .from_path(args.csv)?;
