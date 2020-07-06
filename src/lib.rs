@@ -38,18 +38,15 @@ pub fn run(args: Args) -> Result<(), Box<dyn Error>> {
     // - Size KB (distinguish Kilobyes from Kibibytes)
     // - Size MB
     // - Size GB
-    let mut wtr = csv::WriterBuilder::new()
-        .quote_style(csv::QuoteStyle::Always)
-        .from_path(args.csv)?;
-
     // MVP
     // - Name
     // - Size
     let r: Record = get_metadata(&args.path)?;
 
-    wtr.serialize(r)?;
-    wtr.flush()?;
+    write_csv(&args.csv, r)?;
+
     Ok(())
+
     /*
     println!("file type: {:?}", md.file_type());
     println!("is directory?: {:?}", md.is_dir());
@@ -87,6 +84,16 @@ fn get_metadata(path: &PathBuf) -> Result<Record, Box<dyn Error>> {
     let size = md.len();
 
     Ok(Record { name, size })
+}
+
+fn write_csv(path: &PathBuf, r: Record) -> Result<(), Box<dyn Error>> {
+    let mut wtr = csv::WriterBuilder::new()
+        .quote_style(csv::QuoteStyle::Always)
+        .from_path(path)?;
+
+    wtr.serialize(r)?;
+    wtr.flush()?;
+    Ok(())
 }
 
 #[cfg(test)]
