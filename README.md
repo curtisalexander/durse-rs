@@ -14,13 +14,14 @@ derse
 Get directory metadata
 
 USAGE:
-    derse --path <path>
+    derse --path <path> --csv <csv>
 
 FLAGS:
     -h, --help       Prints help information
     -V, --version    Prints version information
 
 OPTIONS:
+    -c, --csv <csv>      Path to csv file to write
     -p, --path <path>    Path to acquire metadata
 ```
 
