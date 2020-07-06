@@ -13,7 +13,7 @@ pub struct Args {
     /// Path to acquire metadata
     #[clap(long, short)]
     pub path: PathBuf,
-    /// Path to csv file to write
+    /// Path to csv file to write results
     #[clap(long, short, parse(from_os_str))]
     pub csv: PathBuf,
 }

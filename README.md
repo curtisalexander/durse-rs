@@ -21,7 +21,7 @@ FLAGS:
     -V, --version    Prints version information
 
 OPTIONS:
-    -c, --csv <csv>      Path to csv file to write
+    -c, --csv <csv>      Path to csv file to write results
     -p, --path <path>    Path to acquire metadata
 ```
 
