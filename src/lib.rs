@@ -1,4 +1,6 @@
 use std::error::Error;
+use std::fs;
+use std::io;
 use std::path::PathBuf;
 
 use clap::Clap;
@@ -38,12 +40,18 @@ pub fn run(args: Args) -> Result<(), Box<dyn Error>> {
     // - Size KB (distinguish Kilobyes from Kibibytes)
     // - Size MB
     // - Size GB
+
     // MVP
     // - Name
     // - Size
-    let r: Record = get_metadata(&args.path)?;
-
-    write_csv(&args.csv, r)?;
+    // let r: Record = get_metadata(&args.path)?;
+    // write_csv_file(&args.csv, r)?;
+    if args.path.is_dir() {
+        walk_dir(&args.path)?;
+    } else {
+        let r: Record = get_metadata(&args.path)?;
+        write_csv_file(&args.csv, r)?;
+    }
 
     Ok(())
 
@@ -86,10 +94,31 @@ fn get_metadata(path: &PathBuf) -> Result<Record, Box<dyn Error>> {
     Ok(Record { name, size })
 }
 
-fn write_csv(path: &PathBuf, r: Record) -> Result<(), Box<dyn Error>> {
+fn walk_dir(dir: &PathBuf) -> Result<(), Box<dyn Error>> {
+    for entry in fs::read_dir(dir)? {
+        let entry = entry?;
+        let path = entry.path();
+
+        let r: Record = get_metadata(&path)?;
+        write_csv_stdout(r)?;
+    }
+    Ok(())
+}
+
+fn write_csv_file(path: &PathBuf, r: Record) -> Result<(), Box<dyn Error>> {
     let mut wtr = csv::WriterBuilder::new()
         .quote_style(csv::QuoteStyle::Always)
         .from_path(path)?;
+
+    wtr.serialize(r)?;
+    wtr.flush()?;
+    Ok(())
+}
+
+fn write_csv_stdout(r: Record) -> Result<(), Box<dyn Error>> {
+    let mut wtr = csv::WriterBuilder::new()
+        .quote_style(csv::QuoteStyle::Always)
+        .from_writer(io::stdout());
 
     wtr.serialize(r)?;
     wtr.flush()?;
