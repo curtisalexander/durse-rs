@@ -12,7 +12,7 @@ pub struct Args {
     #[clap(long, short)]
     pub path: PathBuf,
     /// Path to csv file to write
-    #[clap(long, short)]
+    #[clap(long, short, parse(from_os_str))]
     pub csv: PathBuf,
 }
 
@@ -53,7 +53,7 @@ pub fn run(args: Args) -> Result<(), Box<dyn Error>> {
     let size = md.len();
 
     let r = Record { name, size };
-    println!("Record: {:?}", r);
+    // println!("Record: {:?}", r);
 
     wtr.serialize(r)?;
     wtr.flush()?;
