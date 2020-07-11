@@ -7,7 +7,7 @@ use serde::Serialize;
 use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]
-#[structopt(name = "derse", about = "Get directory metadata")]
+#[structopt(about = "Get directory metadata")]
 pub struct Args {
     /// Path to acquire metadata
     #[structopt(long, short)]
