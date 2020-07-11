@@ -3,18 +3,17 @@ use std::fs;
 use std::io;
 use std::path::PathBuf;
 
-use clap::Clap;
 use serde::Serialize;
+use structopt::StructOpt;
 
-/// Get directory metadata
-#[derive(Clap)]
-// #[clap(version = "0.1.0", author = "Curtis Alexander <calex@calex.org>")]
+#[derive(StructOpt, Debug)]
+#[structopt(name = "derse", about = "Get directory metadata")]
 pub struct Args {
     /// Path to acquire metadata
-    #[clap(long, short)]
+    #[structopt(long, short)]
     pub path: PathBuf,
     /// Path to csv file to write results
-    #[clap(long, short, parse(from_os_str))]
+    #[structopt(long, short, parse(from_os_str))]
     pub csv: PathBuf,
 }
 
