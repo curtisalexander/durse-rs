@@ -13,19 +13,20 @@ pub struct Args {
     /// Directory to begin recursive walk, begin in current directory if no value provided
     #[structopt(long, short)]
     pub path: Option<PathBuf>,
-    /// Output type, stdout if not present
-    #[structopt(long, short, possible_values = &OutType::variants(), case_insensitive = true)]
-    pub out_type: Option<OutType>,
-    /// Path to csv or json file to write results
-    #[structopt(long, short, required_ifs(&[("out_type", "csv"), ("out_type", "json")]), parse(from_os_str))]
-    pub file_name: PathBuf,
+    /// Path to file to write results, writes to stdout if not present
+    #[structopt(long, short, parse(from_os_str))]
+    pub file_name: Option<PathBuf>,
+    /// Output type, defaults to csv if not provided
+    #[structopt(long, short, default_value = "csv", possible_values = &OutType::variants(), case_insensitive = true)]
+    pub out_type: OutType,
 }
 
 arg_enum! {
     #[derive(Debug)]
+    #[allow(non_camel_case_types)]
     pub enum OutType {
-        Csv,
-        Json
+        csv,
+        json
     }
 }
 #[derive(Debug, Serialize)]
@@ -37,26 +38,26 @@ pub struct Record {
 
 #[derive(Debug)]
 struct RecordSet {
-    out_type: Option<OutType>,
-    file_name: PathBuf,
+    file_name: Option<PathBuf>,
+    out_type: OutType,
     set: Vec<Record>,
 }
 
 impl RecordSet {
-    fn new(out_type: Option<OutType>, file_name: PathBuf) -> Self {
+    fn new(file_name: Option<PathBuf>, out_type: OutType) -> Self {
         Self {
-            out_type: out_type,
             file_name: file_name,
+            out_type: out_type,
             set: Vec::with_capacity(10),
         }
     }
 
     fn write(&self) -> Result<(), Box<dyn Error>> {
-        match self.out_type {
-            Some(OutType::Csv) => {
+        match (&self.file_name, &self.out_type) {
+            (Some(file_name), OutType::csv) => {
                 let mut wtr = csv::WriterBuilder::new()
                     .quote_style(csv::QuoteStyle::Always)
-                    .from_path(&self.file_name)?;
+                    .from_path(file_name)?;
 
                 for r in &self.set {
                     wtr.serialize(r)?;
@@ -64,12 +65,7 @@ impl RecordSet {
                 wtr.flush()?;
                 Ok(())
             }
-            Some(OutType::Json) => {
-                return Err(From::from(
-                    "Sorry, wrriting to JSON not yet implemented!  :(",
-                ))
-            }
-            None => {
+            (None, OutType::csv) => {
                 let mut wtr = csv::WriterBuilder::new()
                     .quote_style(csv::QuoteStyle::Always)
                     .from_writer(io::stdout());
@@ -79,6 +75,11 @@ impl RecordSet {
                 }
                 wtr.flush()?;
                 Ok(())
+            }
+            (_, OutType::json) => {
+                return Err(From::from(
+                    "Sorry, writing to JSON not yet implemented!  :(",
+                ))
             }
         }
     }
@@ -109,10 +110,9 @@ pub fn run(args: Args) -> Result<(), Box<dyn Error>> {
     // let r: Record = get_metadata(&args.path)?;
     // write_csv_file(&args.csv, r)?;
     if path.is_dir() {
-        walk_dir(&path, args.out_type, args.file_name)?;
+        walk_dir(&path, args.file_name, args.out_type)?;
     } else {
-        let r: Record = get_metadata(&path)?;
-        write_csv_file(&args.file_name, r)?;
+        return Err(From::from("The provided value of path was not a directory"));
     }
 
     Ok(())
@@ -159,10 +159,10 @@ fn get_metadata(path: &PathBuf) -> Result<Record, Box<dyn Error>> {
 
 fn walk_dir(
     dir: &PathBuf,
-    out_type: Option<OutType>,
-    file_name: PathBuf,
+    file_name: Option<PathBuf>,
+    out_type: OutType,
 ) -> Result<(), Box<dyn Error>> {
-    let mut records = RecordSet::new(out_type, file_name);
+    let mut records = RecordSet::new(file_name, out_type);
 
     for entry in fs::read_dir(dir)? {
         let entry = entry?;
@@ -174,16 +174,6 @@ fn walk_dir(
     }
 
     records.write()?;
-    Ok(())
-}
-
-fn write_csv_file(path: &PathBuf, r: Record) -> Result<(), Box<dyn Error>> {
-    let mut wtr = csv::WriterBuilder::new()
-        .quote_style(csv::QuoteStyle::Always)
-        .from_path(path)?;
-
-    wtr.serialize(r)?;
-    wtr.flush()?;
     Ok(())
 }
 
