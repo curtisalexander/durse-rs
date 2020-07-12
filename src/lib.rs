@@ -1,6 +1,8 @@
 use std::error::Error;
 use std::fs;
+use std::fs::File;
 use std::io;
+use std::io::{BufWriter, Write};
 use std::path::PathBuf;
 
 use serde::Serialize;
@@ -73,13 +75,28 @@ impl RecordSet {
                 for r in &self.set {
                     wtr.serialize(r)?;
                 }
+                Ok(())
+            }
+            (Some(file_name), OutType::json) => {
+                let f = File::create(file_name)?;
+                let mut wtr = BufWriter::new(f);
+
+                for r in &self.set {
+                    serde_json::to_writer(&mut wtr, r)?;
+                    wtr.write_all(b"\n")?;
+                }
                 wtr.flush()?;
                 Ok(())
             }
-            (_, OutType::json) => {
-                return Err(From::from(
-                    "Sorry, writing to JSON not yet implemented!  :(",
-                ))
+            (None, OutType::json) => {
+                let mut wtr = BufWriter::new(io::stdout());
+
+                for r in &self.set {
+                    serde_json::to_writer(&mut wtr, r)?;
+                    wtr.write_all(b"\n")?;
+                }
+                wtr.flush()?;
+                Ok(())
             }
         }
     }
