@@ -1,28 +1,30 @@
-# derse-rs
+# durse-rs
 
 ```
-(d)irectory + t(erse) = derse
+(d)irectory + rec(urse) = durse
 ```
 
-Get directory metadata
+Recursively acquire file metatdata
 
 ## Use
-Generated from [clap](https://clap.rs/).
+Generated from [structopt](https://crates.io/crates/structopt)
 
 ```
-derse
-Get directory metadata
+durse 0.1.0
+Recursively acquire file metadata
 
 USAGE:
-    derse --path <path> --csv <csv>
+    derse [OPTIONS]
 
 FLAGS:
     -h, --help       Prints help information
     -V, --version    Prints version information
 
 OPTIONS:
-    -c, --csv <csv>      Path to csv file to write results
-    -p, --path <path>    Path to acquire metadata
+    -f, --file-name <file-name>    Path to file to write results, writes to stdout if not present
+    -o, --out-type <out-type>      Output type, defaults to csv if not provided [default: csv]  [possible values: csv,
+                                   json]
+    -p, --path <path>              Directory to begin recursive walk, begin in current directory if no value provided
 ```
 
 ## Inspiration
