@@ -11,10 +11,10 @@ Generated from [structopt](https://crates.io/crates/structopt)
 
 ```
 durse 0.1.0
-Recursively acquire file metadata
+(d)irectory + rec(urse) => recursively acquire file metadata within a directory
 
 USAGE:
-    derse [OPTIONS]
+    durse [OPTIONS]
 
 FLAGS:
     -h, --help       Prints help information

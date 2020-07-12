@@ -10,7 +10,9 @@ use structopt::clap::arg_enum;
 use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]
-#[structopt(about = "Recursively acquire file metadata")]
+#[structopt(
+    about = "(d)irectory + rec(urse) => recursively acquire file metadata within a directory"
+)]
 pub struct Args {
     /// Directory to begin recursive walk, begin in current directory if no value provided
     #[structopt(long, short)]
