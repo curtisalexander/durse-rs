@@ -1,10 +1,10 @@
 use std::error::Error;
-use std::fs;
 use std::fs::File;
 use std::io;
 use std::io::{BufWriter, Write};
 use std::path::PathBuf;
 
+use jwalk::WalkDir;
 use serde::Serialize;
 use structopt::clap::arg_enum;
 use structopt::StructOpt;
@@ -183,14 +183,23 @@ fn walk_dir(
 ) -> Result<(), Box<dyn Error>> {
     let mut records = RecordSet::new(file_name, out_type);
 
-    for entry in fs::read_dir(dir)? {
+    for entry in WalkDir::new(dir).sort(true) {
         let entry = entry?;
         let path = entry.path();
 
-        let r = get_metadata(&path).unwrap();
-
-        records.set.push(r);
+        if path.is_file() {
+            let r = get_metadata(&path)?;
+            records.set.push(r);
+        }
     }
+    // for entry in fs::read_dir(dir)? {
+    //     let entry = entry?;
+    //     let path = entry.path();
+
+    //     let r = get_metadata(&path).unwrap();
+
+    //     records.set.push(r);
+    // }
 
     records.write()?;
     Ok(())
