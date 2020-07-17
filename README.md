@@ -14,7 +14,7 @@ durse 0.1.0
 (d)irectory + rec(urse) => recursively acquire file metadata within a directory
 
 USAGE:
-    durse [OPTIONS]
+    durse [OPTIONS] [path]
 
 FLAGS:
     -h, --help       Prints help information
@@ -24,7 +24,9 @@ OPTIONS:
     -f, --file-name <file-name>    Path to file to write results, writes to stdout if not present
     -o, --out-type <out-type>      Output type, defaults to csv if not provided [default: csv]  [possible values: csv,
                                    json]
-    -p, --path <path>              Directory to begin recursive walk, begin in current directory if no value provided
+
+ARGS:
+    <path>    Directory to begin recursive walk, begin in current directory if no value provided
 ```
 
 ## Inspiration

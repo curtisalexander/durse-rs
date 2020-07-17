@@ -15,7 +15,7 @@ use structopt::StructOpt;
 )]
 pub struct Args {
     /// Directory to begin recursive walk, begin in current directory if no value provided
-    #[structopt(long, short)]
+    #[structopt()]
     pub path: Option<PathBuf>,
     /// Path to file to write results, writes to stdout if not present
     #[structopt(long, short, parse(from_os_str))]
