@@ -4,6 +4,7 @@ use std::io;
 use std::io::{BufWriter, Write};
 use std::path::PathBuf;
 
+use chrono::{DateTime, Local};
 use jwalk::WalkDir;
 use serde::Serialize;
 use structopt::clap::arg_enum;
@@ -30,14 +31,24 @@ arg_enum! {
     #[allow(non_camel_case_types)]
     pub enum OutType {
         csv,
-        json
+        ndjson
     }
 }
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct Record {
+    pub full_name: String,
     pub name: String,
+    pub base_name: String,
+    pub extension: String,
+    pub directory_name: String,
+    pub creation_time: DateTime<Local>,
+    pub last_access_time: DateTime<Local>,
+    pub last_modified_time: DateTime<Local>,
     pub size: u64,
+    pub size_kb: f64,
+    pub size_mb: f64,
+    pub size_gb: f64,
 }
 
 #[derive(Debug)]
@@ -79,7 +90,7 @@ impl RecordSet {
                 }
                 Ok(())
             }
-            (Some(file_name), OutType::json) => {
+            (Some(file_name), OutType::ndjson) => {
                 let f = File::create(file_name)?;
                 let mut wtr = BufWriter::new(f);
 
@@ -90,7 +101,7 @@ impl RecordSet {
                 wtr.flush()?;
                 Ok(())
             }
-            (None, OutType::json) => {
+            (None, OutType::ndjson) => {
                 let mut wtr = BufWriter::new(io::stdout());
 
                 for r in &self.set {
@@ -106,28 +117,23 @@ impl RecordSet {
 
 pub fn run(args: Args) -> Result<(), Box<dyn Error>> {
     // Implement the following:
-    // - FullName
-    // - Name
-    // - Basename
-    // - Extension
-    // - DirectoryName
-    // - CreationTime
-    // - LastAccessTime
-    // - LastWriteTime
-    // - Owner
-    // - Size B
-    // - Size KB (distinguish Kilobytes from Kibibytes)
-    // - Size MB
-    // - Size GB
+    //   - FullName
+    //   - Name
+    //   - Basename
+    //   - Extension
+    //   - DirectoryName
+    //   - CreationTime
+    //   - LastAccessTime
+    //   - LastWriteTime
+    //   - ** Owner **
+    //   - Size B
+    //   - Size KB (distinguish Kilobytes from Kibibytes)
+    //   - Size MB
+    //   - Size GB
 
     // Process args
     let path = &args.path.unwrap_or(std::env::current_dir()?);
 
-    // MVP
-    // - Name
-    // - Size
-    // let r: Record = get_metadata(&args.path)?;
-    // write_csv_file(&args.csv, r)?;
     if path.is_dir() {
         walk_dir(&path, args.file_name, args.out_type)?;
     } else {
@@ -137,43 +143,65 @@ pub fn run(args: Args) -> Result<(), Box<dyn Error>> {
     Ok(())
 
     /*
-    println!("file type: {:?}", md.file_type());
-    println!("is directory?: {:?}", md.is_dir());
-    println!("is file?: {:?}", md.is_file());
-    println!("len: {:?}", md.len());
     println!("persmissions: {:?}", md.permissions());
-    // Unix => mtime field of stat
-    // Windows => ftLastWriteTime field
-    if let Ok(time) = md.modified() {
-        println!("modified time{:?}", time);
-    } else {
-        println!("Not supported on this platform");
-    }
-    // Unix => atime field of stat
-    // Windows => ftAccessTime field
-    if let Ok(time) = md.accessed() {
-        println!("accessed time{:?}", time);
-    } else {
-        println!("Not supported on this platform");
-    }
-    // Linux => btime field of statx
-    // Unix => birthtime field of stat
-    // Windows => ftCreationTime
-    if let Ok(time) = md.created() {
-        println!("created time{:?}", time);
-    } else {
-        println!("Not supported on this platform");
-    }
     */
 }
 
 fn get_metadata(path: &PathBuf) -> Result<Record, Box<dyn Error>> {
     let md = path.metadata()?;
-    let name = path.to_string_lossy().into_owned();
-    // let name: &str = path.to_str().unwrap_or_default();
-    let size = md.len();
 
-    Ok(Record { name, size })
+    let full_name = path.to_string_lossy().into_owned();
+    let name = path
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or_default()
+        .to_owned();
+    let base_name = path
+        .file_stem()
+        .and_then(|b| b.to_str())
+        .unwrap_or_default()
+        .to_owned();
+    let extension = path
+        .extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or_default()
+        .to_owned();
+    let directory_name = path
+        .parent()
+        .map(|d| d.to_string_lossy().into_owned())
+        .unwrap_or_default();
+    // Linux => btime field of statx
+    // Unix => birthtime field of stat
+    // Windows => ftCreationTime
+    let creation_time: DateTime<Local> = DateTime::from(md.created()?);
+    // Unix => atime field of stat
+    // Windows => ftAccessTime field
+    let last_access_time: DateTime<Local> = DateTime::from(md.accessed()?);
+    // Unix => mtime field of stat
+    // Windows => ftLastWriteTime field
+    let last_modified_time: DateTime<Local> = DateTime::from(md.modified()?);
+    let size = md.len();
+    // kibibyes
+    let size_kb = (md.len() as f64) / 1024_f64.powi(2);
+    // mebibytes
+    let size_mb = (md.len() as f64) / 1024_f64.powi(3);
+    // gibibytes
+    let size_gb = (md.len() as f64) / 1024_f64.powi(4);
+
+    Ok(Record {
+        full_name,
+        name,
+        base_name,
+        extension,
+        directory_name,
+        creation_time,
+        last_access_time,
+        last_modified_time,
+        size,
+        size_kb,
+        size_mb,
+        size_gb,
+    })
 }
 
 fn walk_dir(
@@ -192,14 +220,6 @@ fn walk_dir(
             records.set.push(r);
         }
     }
-    // for entry in fs::read_dir(dir)? {
-    //     let entry = entry?;
-    //     let path = entry.path();
-
-    //     let r = get_metadata(&path).unwrap();
-
-    //     records.set.push(r);
-    // }
 
     records.write()?;
     Ok(())
