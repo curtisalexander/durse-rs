@@ -23,7 +23,7 @@ FLAGS:
 OPTIONS:
     -f, --file-name <file-name>    Path to file to write results, writes to stdout if not present
     -o, --out-type <out-type>      Output type, defaults to csv if not provided [default: csv]  [possible values: csv,
-                                   json]
+                                   ndjson]
 
 ARGS:
     <path>    Directory to begin recursive walk, begin in current directory if no value provided
