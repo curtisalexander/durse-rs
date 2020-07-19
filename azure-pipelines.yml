@@ -1,21 +1,41 @@
+trigger:
+  branches:
+    include: ['master']
+  tags:
+    include: ['*']
+
 strategy:
   matrix:
-    stable:
+    windows-stable:
+      imageName: 'windows-latest'
       rustup_toolchain: stable
-#    beta:
-#      rustup_toolchain: beta
-#    nightly:
-#      rustup_toolchain: nightly
-
-pool:
-  vmImage: 'ubuntu-latest'
-
-steps:
-  - script: |
-      curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain $RUSTUP_TOOLCHAIN
-      echo "##vso[task.setvariable variable=PATH;]$PATH:$HOME/.cargo/bin"
-    displayName: Install rust
-  - script: cargo build --all
-    displayName: Cargo build
-#  - script: cargo test --all
-#    displayName: Cargo test
+    mac-stable:
+      imageName: 'macos-latest'
+      rustup_toolchain: stable
+    linux-stable:
+      imageName: 'ubuntu-latest'
+      rustup_toolchain: stable
+    pool:
+      vmImage: $(imageName)
+    steps:
+      - script: |
+          set -e
+          curl https://sh.rustup.rs -sSf | sh -s -- -y --profile minimal --default-toolchain $RUSTUP_TOOLCHAIN
+          echo "##vso[task.setvariable variable=PATH;]$PATH:$HOME/.cargo/bin"
+        displayName: "Install rust (*nix)"
+        condition: not(eq(variables['Agent.OS'], 'Windows_NT'))
+      - script: |
+          curl -sSf -o rustup-init.exe https://win.rustup.rs
+          rustup-init.exe -y --profile minimal --default-toolchain %RUSTUP_TOOLCHAIN%
+          set PATH=%PATH%;%USERPROFILE%\.cargo\bin
+          echo "##vso[task.setvariable variable=PATH;]%PATH%;%USERPROFILE%\.cargo\bin"
+        displayName: "Install rust (windows)"
+        condition: eq(variables['Agent.OS'], 'Windows_NT')
+      - bash: |
+          rustup default $RUSTUP_TOOLCHAIN
+          rustup update $RUSTUP_TOOLCHAIN
+        displayName: "Set correct Rust version"
+      - script: cargo build --all
+        displayName: Cargo build
+      - script: cargo test --all
+        displayName: Cargo test
