@@ -134,10 +134,21 @@ pub fn run(args: Args) -> Result<(), Box<dyn Error>> {
     // Process args
     let path = &args.path.unwrap_or(std::env::current_dir()?);
 
+    // Validate file_name
+    match file_name_valid(&args.file_name) {
+        (true, _) => (),
+        (false, parent) => return Err(From::from(format!(
+            "The parent directory of the value of the parameter --file-name ({}) does not exist",
+            parent
+        ))),
+    };
+
     if path.is_dir() {
         walk_dir(&path, args.file_name, args.out_type)?;
     } else {
-        return Err(From::from("The provided value of path was not a directory"));
+        return Err(From::from(
+            "The provided value of the argument <path> was not a directory",
+        ));
     }
 
     Ok(())
@@ -145,6 +156,16 @@ pub fn run(args: Args) -> Result<(), Box<dyn Error>> {
     /*
     println!("persmissions: {:?}", md.permissions());
     */
+}
+
+fn file_name_valid(f: &Option<PathBuf>) -> (bool, String) {
+    match f {
+        None => (true, String::from("")),
+        Some(p) => p.parent().map_or_else(
+            || (false, String::from("no_parent")),
+            |parent| (parent.exists(), parent.to_string_lossy().into_owned()),
+        ),
+    }
 }
 
 fn get_metadata(path: &PathBuf) -> Result<Record, Box<dyn Error>> {
