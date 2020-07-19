@@ -61,9 +61,9 @@ struct RecordSet {
 impl RecordSet {
     fn new(file_name: Option<PathBuf>, out_type: OutType) -> Self {
         Self {
-            file_name: file_name,
-            out_type: out_type,
-            set: Vec::with_capacity(10),
+            file_name,
+            out_type,
+            set: Vec::with_capacity(20),
         }
     }
 
@@ -137,10 +137,12 @@ pub fn run(args: Args) -> Result<(), Box<dyn Error>> {
     // Validate file_name
     match file_name_valid(&args.file_name) {
         (true, _) => (),
-        (false, parent) => return Err(From::from(format!(
+        (false, parent) => {
+            return Err(From::from(format!(
             "The parent directory of the value of the parameter --file-name ({}) does not exist",
             parent
-        ))),
+        )))
+        }
     };
 
     if path.is_dir() {
