@@ -15,9 +15,9 @@ strategy:
     linux-stable:
       imageName: 'ubuntu-latest'
       rustup_toolchain: stable
-    pool:
-      vmImage: $(imageName)
-    steps:
+  pool:
+    vmImage: $(imageName)
+  steps:
     - script: |
         set -e
         curl https://sh.rustup.rs -sSf | sh -s -- -y --profile minimal --default-toolchain $RUSTUP_TOOLCHAIN
