@@ -59,7 +59,7 @@ git tag -d v0.1.0
 git push --delete origin v0.1.0
 
 # create tag
-git tag v0.1.0
+git tag -a v0.1.0 -m "v0.1.0"
 
 # push to origin
 git push --tags origin
