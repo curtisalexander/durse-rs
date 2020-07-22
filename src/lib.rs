@@ -135,7 +135,6 @@ pub fn run(args: Args) -> Result<(), Box<dyn Error>> {
     let path = &args.path.unwrap_or(std::env::current_dir()?);
 
     // Validate file_name
-    // TODO: replace unwrap here
     match file_name_valid(&args.file_name).unwrap() {
         (true, _) => (),
         (false, parent) => {
