@@ -38,18 +38,24 @@ steps:
       rustup default $RUSTUP_TOOLCHAIN
       rustup update $RUSTUP_TOOLCHAIN
     displayName: "Set correct Rust version"
-  - script: |
+  - bash: |
+      rustup target add x86_64-unknown-linux-musl
+    displayName: "Add x86_64-unknown-linux-musl target"
+    condition: eq(variables['Agent.OS'], 'Linux')
+  - bash: |
       DATE="$(date +%Y-%m-%d)"
       echo "##vso[task.setvariable variable=build.date]$DATE"
     displayName: "Create date variable"
-  - script: |
+  - bash: |
       MY_TAG="$(Build.SourceBranch)"
       MY_TAG=${MY_TAG#refs/tags/}
       echo $MY_TAG
       echo "##vso[task.setvariable variable=build.my_tag]$MY_TAG"
     displayName: "Create my tag variable"
-  - script: cargo build --release --all --target $TARGET
+  - script: |
+      cargo build --release --all --target $TARGET
     displayName: Build
+    condition: $target 
   - task: CopyFiles@2
     displayName: Copy assets
     inputs:
