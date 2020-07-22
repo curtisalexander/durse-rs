@@ -5,7 +5,7 @@ trigger:
     include: ['*']
 
 jobs:
-  - job: 'BuildandRelease'
+  - job: 'Build'
     condition: startsWith(variables['build.sourceBranch'], 'refs/tags/')
     strategy:
       matrix:
