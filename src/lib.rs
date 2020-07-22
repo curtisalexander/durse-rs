@@ -135,7 +135,8 @@ pub fn run(args: Args) -> Result<(), Box<dyn Error>> {
     let path = &args.path.unwrap_or(std::env::current_dir()?);
 
     // Validate file_name
-    match file_name_valid(&args.file_name) {
+    // TODO: replace unwrap here
+    match file_name_valid(&args.file_name).unwrap() {
         (true, _) => (),
         (false, parent) => {
             return Err(From::from(format!(
@@ -160,14 +161,15 @@ pub fn run(args: Args) -> Result<(), Box<dyn Error>> {
     */
 }
 
-fn file_name_valid(f: &Option<PathBuf>) -> (bool, String) {
-    match f {
+fn file_name_valid(f: &Option<PathBuf>) -> Result<(bool, String), Box<dyn Error>> {
+    let result = match f {
         None => (true, String::from("")),
-        Some(p) => p.parent().map_or_else(
+        Some(p) => p.canonicalize()?.parent().map_or_else(
             || (false, String::from("no_parent")),
             |parent| (parent.exists(), parent.to_string_lossy().into_owned()),
         ),
-    }
+    };
+    Ok(result)
 }
 
 fn get_metadata(path: &PathBuf) -> Result<Record, Box<dyn Error>> {
