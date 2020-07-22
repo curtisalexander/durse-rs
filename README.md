@@ -46,3 +46,21 @@ Export-Csv -Path $OutCSV -NoTypeInformation
 ```
 
 > **NOTE:** The [Get-Acl]() cmdlet only works on Windows.  For details one getting file permissions on Linux or macOS, see [Working with Linux Permissions in PowerShell 7](https://petri.com/working-with-linux-permissions-in-powershell-7).
+
+## Azure Pipelines
+
+To trigger Azure Pipelines, include a tag.
+
+```
+# delete current tag
+git tag -d v0.1.0
+
+# delete from origin
+git push --delete origin v0.1.0
+
+# create tag
+git tag v0.1.0
+
+# push to origin
+git push --tags origin
+```
