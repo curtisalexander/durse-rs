@@ -86,7 +86,7 @@ steps:
     condition: eq(variables['Agent.OS'], 'Windows_NT')
   - task: GithubRelease@0
     displayName: Github Release
-    condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/'))
+    condition: succeeded()
     # condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/'))
     inputs:
       gitHubConnection: 'github.com_curtisalexander'
