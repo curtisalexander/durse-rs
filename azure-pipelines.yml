@@ -58,7 +58,7 @@ jobs:
         displayName: "Create my tag variable"
       - bash: |
           cargo build --release --all --target $TARGET
-        displayName: Build (*nix)
+        displayName: Build Release
       - task: CopyFiles@2
         displayName: Copy assets (windows)
         inputs:
