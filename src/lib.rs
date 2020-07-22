@@ -135,6 +135,7 @@ pub fn run(args: Args) -> Result<(), Box<dyn Error>> {
     let path = &args.path.unwrap_or(std::env::current_dir()?);
 
     // Validate file_name
+    /*
     match file_name_valid(&args.file_name).unwrap() {
         (true, _) => (),
         (false, parent) => {
@@ -144,6 +145,7 @@ pub fn run(args: Args) -> Result<(), Box<dyn Error>> {
         )))
         }
     };
+    */
 
     if path.is_dir() {
         walk_dir(&path, args.file_name, args.out_type)?;
@@ -160,6 +162,7 @@ pub fn run(args: Args) -> Result<(), Box<dyn Error>> {
     */
 }
 
+/*
 fn file_name_valid(f: &Option<PathBuf>) -> Result<(bool, String), Box<dyn Error>> {
     let result = match f {
         None => (true, String::from("")),
@@ -170,6 +173,7 @@ fn file_name_valid(f: &Option<PathBuf>) -> Result<(bool, String), Box<dyn Error>
     };
     Ok(result)
 }
+*/
 
 fn get_metadata(path: &PathBuf) -> Result<Record, Box<dyn Error>> {
     let md = path.metadata()?;

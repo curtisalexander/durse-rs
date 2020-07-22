@@ -89,8 +89,8 @@ jobs:
           archiveFile: '$(Build.ArtifactStagingDirectory)/durse-$(build.my_tag)-$(TARGET).zip'
         condition: eq(variables['Agent.OS'], 'Windows_NT')
       - task: GithubRelease@0
-        displayName: Github Release
-        condition: succeeded()
+        displayName: Github Release (*nix)
+        condition: and(succeeded(), not(eq(variables['Agent.OS'], 'Windows_NT')))
         inputs:
           gitHubConnection: 'github.com_curtisalexander'
           repositoryName: 'curtisalexander/durse-rs'
@@ -99,6 +99,20 @@ jobs:
           tagSource: 'manual'
           tag: '$(build.my_tag)'
           assets: '$(Build.ArtifactStagingDirectory)/durse-$(build.my_tag)-$(TARGET).tar.gz'
+          title: '$(build.my_tag) - $(build.date)'
+          assetUploadMode: 'replace'
+          addChangeLog: false
+      - task: GithubRelease@0
+        displayName: Github Release (windows)
+        condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'))
+        inputs:
+          gitHubConnection: 'github.com_curtisalexander'
+          repositoryName: 'curtisalexander/durse-rs'
+          action: 'edit'
+          target: '$(build.sourceVersion)'
+          tagSource: 'manual'
+          tag: '$(build.my_tag)'
+          assets: '$(Build.ArtifactStagingDirectory)\durse-$(build.my_tag)-$(TARGET).zip'
           title: '$(build.my_tag) - $(build.date)'
           assetUploadMode: 'replace'
           addChangeLog: false
