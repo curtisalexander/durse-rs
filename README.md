@@ -65,9 +65,8 @@ git tag -a v0.1.0 -m "v0.1.0"
 git push --tags origin
 ```
 
-To manually force a pipeline run, 
+To manually force a pipeline run within https://dev.azure.com, the following needs to be entered when prompted for the branch / tag.
 
 ```
-
-
+refs/tags/v0.1.0
 ```
