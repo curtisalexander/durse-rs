@@ -1,5 +1,7 @@
 # durse-rs
 
+<!--[![Build Status](https://dev.azure.com/curtisalexander/durse-rs/_apis/build/status/curtisalexander.durse-rs%20(9)?branchName=master)](https://dev.azure.com/curtisalexander/durse-rs/_build/latest?definitionId=17&branchName=master) -->
+
 ```
 (d)irectory + rec(urse) = durse
 ```

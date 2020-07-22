@@ -1,8 +1,7 @@
 trigger:
-  branches:
-    include: ['master']
   tags:
-    include: ['*']
+    include:
+    - '*'
 
 strategy:
   matrix:
