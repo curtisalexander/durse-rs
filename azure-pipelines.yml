@@ -62,11 +62,19 @@ steps:
     displayName: Build (windows)
     condition: eq(variables['Agent.OS'], 'Windows_NT')
   - task: CopyFiles@2
-    displayName: Copy assets
+    displayName: Copy assets (windows)
+    inputs:
+      sourceFolder: '$(Build.SourcesDirectory)/target/%TARGET%/release'
+      contents: durse
+      targetFolder: '$(Build.BinariesDirectory)/durse'
+    condition: eq(variables['Agent.OS'], 'Windows_NT')
+  - task: CopyFiles@2
+    displayName: Copy assets (*nix)
     inputs:
       sourceFolder: '$(Build.SourcesDirectory)/target/$(TARGET)/release'
       contents: durse
       targetFolder: '$(Build.BinariesDirectory)/durse'
+    condition: not(eq(variables['Agent.OS'], 'Windows_NT'))
   - task: ArchiveFiles@2
     displayName: Gather assets (*nix)
     inputs:
@@ -85,6 +93,7 @@ steps:
   - task: GithubRelease@0
     displayName: Github Release
     condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/'))
+    # condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/'))
     inputs:
       gitHubConnection: 'github.com_curtisalexander'
       repositoryName: 'curtisalexander/durse-rs'
