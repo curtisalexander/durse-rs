@@ -65,7 +65,7 @@ steps:
     displayName: Copy assets (windows)
     inputs:
       sourceFolder: '$(Build.SourcesDirectory)/target/%TARGET%/release'
-      contents: durse
+      contents: durse.exe
       targetFolder: '$(Build.BinariesDirectory)/durse'
     condition: eq(variables['Agent.OS'], 'Windows_NT')
   - task: CopyFiles@2
