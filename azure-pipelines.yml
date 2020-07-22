@@ -52,7 +52,7 @@ steps:
       echo $MY_TAG
       echo "##vso[task.setvariable variable=build.my_tag]$MY_TAG"
     displayName: "Create my tag variable"
-  - script: |
+  - bash: |
       cargo build --release --all --target $TARGET
     displayName: Build
   - task: CopyFiles@2
