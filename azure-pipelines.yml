@@ -78,7 +78,7 @@ steps:
   - task: GithubRelease@0
     condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/'))
     inputs:
-      gitHubConnection: 'curtisalexander'
+      gitHubConnection: 'github.com_curtisalexander'
       repositoryName: 'curtisalexander/durse-rs'
       action: 'edit'
       target: '$(build.sourceVersion)'
