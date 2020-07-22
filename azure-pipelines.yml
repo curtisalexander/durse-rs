@@ -55,7 +55,6 @@ steps:
   - script: |
       cargo build --release --all --target $TARGET
     displayName: Build
-    condition: $target 
   - task: CopyFiles@2
     displayName: Copy assets
     inputs:
