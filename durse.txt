@@ -1,3 +1,0 @@
-This is a file
-It has some contents
-I am not interested in the contents but the metadata
