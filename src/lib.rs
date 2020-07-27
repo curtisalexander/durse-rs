@@ -37,6 +37,7 @@ arg_enum! {
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct Record {
+    pub run_date: String,
     pub full_name: String,
     pub name: String,
     pub base_name: String,
@@ -117,6 +118,7 @@ impl RecordSet {
 
 pub fn run(args: Args) -> Result<(), Box<dyn Error>> {
     // Implement the following:
+    //   - RunDate
     //   - FullName
     //   - Name
     //   - Basename
@@ -133,7 +135,6 @@ pub fn run(args: Args) -> Result<(), Box<dyn Error>> {
 
     // Process args
     let path = &args.path.unwrap_or(std::env::current_dir()?);
-
     // Validate file_name
     /*
     match file_name_valid(&args.file_name).unwrap() {
@@ -175,7 +176,7 @@ fn file_name_valid(f: &Option<PathBuf>) -> Result<(bool, String), Box<dyn Error>
 }
 */
 
-fn get_metadata(path: &PathBuf) -> Result<Record, Box<dyn Error>> {
+fn get_metadata(path: &PathBuf, run_date: String) -> Result<Record, Box<dyn Error>> {
     let md = path.metadata()?;
 
     let full_name = path.to_string_lossy().into_owned();
@@ -217,6 +218,7 @@ fn get_metadata(path: &PathBuf) -> Result<Record, Box<dyn Error>> {
     let size_gb = (md.len() as f64) / 1024_f64.powi(4);
 
     Ok(Record {
+        run_date,
         full_name,
         name,
         base_name,
@@ -239,12 +241,14 @@ fn walk_dir(
 ) -> Result<(), Box<dyn Error>> {
     let mut records = RecordSet::new(file_name, out_type);
 
-    for entry in WalkDir::new(dir).sort(true) {
+    let run_date = Local::now().to_string();
+
+    for entry in WalkDir::new(dir).skip_hidden(false) {
         let entry = entry?;
         let path = entry.path();
 
         if path.is_file() {
-            let r = get_metadata(&path)?;
+            let r = get_metadata(&path, run_date.clone())?;
             records.set.push(r);
         }
     }
