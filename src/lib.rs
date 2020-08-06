@@ -1,11 +1,13 @@
+use std::env;
 use std::error::Error;
-use std::fs::File;
+use std::fs::{File, Metadata};
 use std::io;
 use std::io::{BufWriter, Write};
 use std::path::PathBuf;
 
 use chrono::{DateTime, Local};
 use jwalk::WalkDir;
+use path_clean::PathClean;
 use serde::Serialize;
 use structopt::clap::arg_enum;
 use structopt::StructOpt;
@@ -135,8 +137,8 @@ pub fn run(args: Args) -> Result<(), Box<dyn Error>> {
 
     // Process args
     let path = &args.path.unwrap_or(std::env::current_dir()?);
+
     // Validate file_name
-    /*
     match file_name_valid(&args.file_name).unwrap() {
         (true, _) => (),
         (false, parent) => {
@@ -146,7 +148,6 @@ pub fn run(args: Args) -> Result<(), Box<dyn Error>> {
         )))
         }
     };
-    */
 
     if path.is_dir() {
         walk_dir(&path, args.file_name, args.out_type)?;
@@ -163,22 +164,29 @@ pub fn run(args: Args) -> Result<(), Box<dyn Error>> {
     */
 }
 
-/*
 fn file_name_valid(f: &Option<PathBuf>) -> Result<(bool, String), Box<dyn Error>> {
     let result = match f {
         None => (true, String::from("")),
-        Some(p) => p.canonicalize()?.parent().map_or_else(
-            || (false, String::from("no_parent")),
-            |parent| (parent.exists(), parent.to_string_lossy().into_owned()),
-        ),
+        Some(p) => {
+            // https://stackoverflow.com/a/54817755
+            let abs_path = if p.is_absolute() {
+                p.to_path_buf()
+            } else {
+                env::current_dir()?.join(p)
+            }
+            .clean();
+
+            abs_path.parent().map_or_else(
+                || (false, String::from("no_parent")),
+                |parent| (parent.exists(), parent.to_string_lossy().into_owned()),
+            )
+        }
     };
+
     Ok(result)
 }
-*/
 
-fn get_metadata(path: &PathBuf, run_date: String) -> Result<Record, Box<dyn Error>> {
-    let md = path.metadata()?;
-
+fn get_metadata(path: &PathBuf, md: &Metadata, run_date: String) -> Result<Record, Box<dyn Error>> {
     let full_name = path.to_string_lossy().into_owned();
     let name = path
         .file_name()
@@ -248,7 +256,8 @@ fn walk_dir(
         let path = entry.path();
 
         if path.is_file() {
-            let r = get_metadata(&path, run_date.clone())?;
+            let md = entry.metadata()?;
+            let r = get_metadata(&path, &md, run_date.clone())?;
             records.set.push(r);
         }
     }
