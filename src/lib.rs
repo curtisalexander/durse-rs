@@ -36,10 +36,11 @@ arg_enum! {
         ndjson
     }
 }
+
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "PascalCase")]
-pub struct Record {
-    pub run_date: String,
+pub struct Record<'a> {
+    pub run_date: &'a str,
     pub full_name: String,
     pub name: String,
     pub base_name: String,
@@ -55,13 +56,13 @@ pub struct Record {
 }
 
 #[derive(Debug)]
-struct RecordSet {
+struct RecordSet<'a> {
     file_name: Option<PathBuf>,
     out_type: OutType,
-    set: Vec<Record>,
+    set: Vec<Record<'a>>,
 }
 
-impl RecordSet {
+impl RecordSet<'_> {
     fn new(file_name: Option<PathBuf>, out_type: OutType) -> Self {
         Self {
             file_name,
@@ -186,7 +187,11 @@ fn file_name_valid(f: &Option<PathBuf>) -> Result<(bool, String), Box<dyn Error>
     Ok(result)
 }
 
-fn get_metadata(path: &PathBuf, md: &Metadata, run_date: String) -> Result<Record, Box<dyn Error>> {
+fn get_metadata<'a>(
+    path: &PathBuf,
+    md: &Metadata,
+    run_date: &'a str,
+) -> Result<Record<'a>, Box<dyn Error>> {
     let full_name = path.to_string_lossy().into_owned();
     let name = path
         .file_name()
@@ -257,7 +262,7 @@ fn walk_dir(
 
         if path.is_file() {
             let md = entry.metadata()?;
-            let r = get_metadata(&path, &md, run_date.clone())?;
+            let r = get_metadata(&path, &md, &run_date)?;
             records.set.push(r);
         }
     }
