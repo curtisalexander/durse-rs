@@ -227,13 +227,13 @@ fn get_metadata<'a>(
     let owner = String::from("yes");
     let size = md.len();
     // kibibyes
-    let size_kb = (md.len() as f64) / 1024_f64.powi(2);
+    let size_kb = (md.len() as f64) / 1024_f64.powi(1);
     // mebibytes
-    let size_mb = (md.len() as f64) / 1024_f64.powi(3);
+    let size_mb = (md.len() as f64) / 1024_f64.powi(2);
     // gibibytes
-    let size_gb = (md.len() as f64) / 1024_f64.powi(4);
+    let size_gb = (md.len() as f64) / 1024_f64.powi(3);
     // tebibytes
-    let size_tb = (md.len() as f64) / 1024_f64.powi(5);
+    let size_tb = (md.len() as f64) / 1024_f64.powi(4);
 
     Ok(Record {
         run_date,
