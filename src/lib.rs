@@ -44,15 +44,18 @@ pub struct Record<'a> {
     pub full_name: String,
     pub name: String,
     pub base_name: String,
+    pub is_directory: bool,
     pub extension: String,
     pub directory_name: String,
     pub creation_time: DateTime<Local>,
     pub last_access_time: DateTime<Local>,
     pub last_modified_time: DateTime<Local>,
+    pub owner: String,
     pub size: u64,
     pub size_kb: f64,
     pub size_mb: f64,
     pub size_gb: f64,
+    pub size_tb: f64,
 }
 
 #[derive(Debug)]
@@ -124,17 +127,19 @@ pub fn run(args: Args) -> Result<(), Box<dyn Error>> {
     //   - RunDate
     //   - FullName
     //   - Name
+    //   - IsDirectory
     //   - Basename
     //   - Extension
     //   - DirectoryName
     //   - CreationTime
     //   - LastAccessTime
     //   - LastWriteTime
-    //   - ** Owner **
+    //   - Owner
     //   - Size B
-    //   - Size KB (distinguish Kilobytes from Kibibytes)
-    //   - Size MB
-    //   - Size GB
+    //   - Size KB (distinguish kilobytes from kibibytes)
+    //   - Size MB (distinguish megaytes from mebibytes)
+    //   - Size GB (distinguish gigabytes from gibibytes)
+    //   - Size TB (distinguish terabytes from tebibytes)
 
     // Process args
     let path = &args.path.unwrap_or(std::env::current_dir()?);
@@ -159,10 +164,6 @@ pub fn run(args: Args) -> Result<(), Box<dyn Error>> {
     }
 
     Ok(())
-
-    /*
-    println!("persmissions: {:?}", md.permissions());
-    */
 }
 
 fn file_name_valid(f: &Option<PathBuf>) -> Result<(bool, String), Box<dyn Error>> {
@@ -203,6 +204,7 @@ fn get_metadata<'a>(
         .and_then(|b| b.to_str())
         .unwrap_or_default()
         .to_owned();
+    let is_directory = path.is_dir();
     let extension = path
         .extension()
         .and_then(|e| e.to_str())
@@ -222,6 +224,7 @@ fn get_metadata<'a>(
     // Unix => mtime field of stat
     // Windows => ftLastWriteTime field
     let last_modified_time: DateTime<Local> = DateTime::from(md.modified()?);
+    let owner = String::from("yes");
     let size = md.len();
     // kibibyes
     let size_kb = (md.len() as f64) / 1024_f64.powi(2);
@@ -229,21 +232,26 @@ fn get_metadata<'a>(
     let size_mb = (md.len() as f64) / 1024_f64.powi(3);
     // gibibytes
     let size_gb = (md.len() as f64) / 1024_f64.powi(4);
+    // tebibytes
+    let size_tb = (md.len() as f64) / 1024_f64.powi(5);
 
     Ok(Record {
         run_date,
         full_name,
         name,
         base_name,
+        is_directory,
         extension,
         directory_name,
         creation_time,
         last_access_time,
         last_modified_time,
+        owner,
         size,
         size_kb,
         size_mb,
         size_gb,
+        size_tb,
     })
 }
 
