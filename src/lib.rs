@@ -226,7 +226,7 @@ fn get_metadata<'a>(
     // Unix => mtime field of stat
     // Windows => ftLastWriteTime field
     let last_modified_time: DateTime<Local> = DateTime::from(md.modified()?);
-    let owner = String::from("yes");
+    let owner = String::from("");
     // let owner = std::fs::metadata(path)?.uid();
     let size = md.len();
     // kibibyes
