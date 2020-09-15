@@ -3,6 +3,7 @@ use std::error::Error;
 use std::fs::{File, Metadata};
 use std::io;
 use std::io::{BufWriter, Write};
+// use std::os::unix::fs::MetadataExt;
 use std::path::PathBuf;
 
 use chrono::{DateTime, Local};
@@ -50,6 +51,7 @@ pub struct Record<'a> {
     pub creation_time: DateTime<Local>,
     pub last_access_time: DateTime<Local>,
     pub last_modified_time: DateTime<Local>,
+    // pub owner: u32,
     pub owner: String,
     pub size: u64,
     pub size_kb: f64,
@@ -225,6 +227,7 @@ fn get_metadata<'a>(
     // Windows => ftLastWriteTime field
     let last_modified_time: DateTime<Local> = DateTime::from(md.modified()?);
     let owner = String::from("yes");
+    // let owner = std::fs::metadata(path)?.uid();
     let size = md.len();
     // kibibyes
     let size_kb = (md.len() as f64) / 1024_f64.powi(1);
