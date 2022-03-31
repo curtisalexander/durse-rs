@@ -38,10 +38,10 @@ pub struct Args {
     /// Directory to begin recursive walk, begin in current directory if no value provided
     #[clap()]
     pub path: Option<PathBuf>,
-    /// Path to file to write results, writes to stdout if not present
+    /// Path to file to where metadata will be written{n}Results written to stdout if not provided
     #[clap(long, short, parse(from_os_str))]
     pub file_name: Option<PathBuf>,
-    /// Output type, defaults to csv if not provided
+    /// Output file type
     #[clap(arg_enum, long, short, default_value = "csv", ignore_case = true)]
     pub out_type: OutType,
 }

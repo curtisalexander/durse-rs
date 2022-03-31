@@ -1,12 +1,12 @@
 # durse-rs
 
-<!--[![Build Status](https://dev.azure.com/curtisalexander/durse-rs/_apis/build/status/curtisalexander.durse-rs%20(9)?branchName=master)](https://dev.azure.com/curtisalexander/durse-rs/_build/latest?definitionId=17&branchName=master) -->
+[![durse-rs](https://github.com/curtisalexander/durse-rs/workflows/durse/badge.svg)](https://github.com/curtisalexander/durse-rs/actions)
 
 ```
 (d)irectory + rec(urse) = durse
 ```
 
-Recursively acquire file metatdata
+Recursively acquire file metatdata within a directory
 
 ## Use
 Generated from [clap](https://crates.io/crates/clap) via `durse --help`
@@ -22,10 +22,10 @@ ARGS:
     <PATH>    Directory to begin recursive walk, begin in current directory if no value provided
 
 OPTIONS:
-    -f, --file-name <FILE_NAME>    Path to file to write results, writes to stdout if not present
+    -f, --file-name <FILE_NAME>    Path to file to where metadata will be written
+                                   Results written to stdout if not provided
     -h, --help                     Print help information
-    -o, --out-type <OUT_TYPE>      Output type, defaults to csv if not provided [default: csv]
-                                   [possible values: csv, ndjson]
+    -o, --out-type <OUT_TYPE>      Output file type [default: csv] [possible values: csv, ndjson]
 ```
 
 ## Inspiration
