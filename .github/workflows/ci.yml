@@ -1,7 +1,7 @@
 name: durse
 
 env:
-    package_name: durse-rs
+    package_name: durse
 
 on:
   push:
