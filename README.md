@@ -1,6 +1,6 @@
 # durse-rs
 
-[![durse-rs](https://github.com/curtisalexander/durse-rs/workflows/durse/badge.svg)](https://github.com/curtisalexander/durse-rs/actions)
+[![durse](https://github.com/curtisalexander/durse-rs/actions/workflows/ci.yml/badge.svg)](https://github.com/curtisalexander/durse-rs/actions/workflows/ci.yml)
 
 ```
 (d)irectory + rec(urse) = durse
