@@ -45,7 +45,7 @@ Export-Csv -Path $OutCSV -NoTypeInformation
 > **NOTE:** The [Get-Acl]() cmdlet only works on Windows.  For details one getting file permissions on Linux or macOS, see [Working with Linux Permissions in PowerShell 7](https://petri.com/working-with-linux-permissions-in-powershell-7).
 
 ## Github Actions
-Below is the rough `git tag` dance to delete and/or add tags to [trigger Github Actions](https://github.com/curtisalexander/readstat-rs/blob/main/.github/workflows/main.yml#L7-L10).
+Below is the rough `git tag` dance to delete and/or add tags to [trigger Github Actions](https://github.com/curtisalexander/durse-rs/blob/main/.github/workflows/ci.yml#L6-L9).
 
 ```sh
 # delete local tag
