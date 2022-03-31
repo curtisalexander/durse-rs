@@ -1,40 +1,56 @@
 use std::env;
 use std::error::Error;
+use std::ffi::OsStr;
 use std::fs::{File, Metadata};
 use std::io;
 use std::io::{BufWriter, Write};
+use std::os::windows::prelude::OsStrExt;
+// use std::os::unix::fs::MetadataExt;
 use std::path::PathBuf;
+use std::string::FromUtf16Error;
 
+use clap::{ArgEnum, Parser};
 use chrono::{DateTime, Local};
 use jwalk::WalkDir;
 use path_clean::PathClean;
 use serde::Serialize;
-use structopt::clap::arg_enum;
-use structopt::StructOpt;
+use windows::{
+    core::{PCWSTR, PWSTR},
+    Win32::{
+        Foundation::{GetLastError, ERROR_SUCCESS, HANDLE, PSID},
+        Security::{
+            Authorization::{GetSecurityInfo, SE_FILE_OBJECT},
+            LookupAccountSidW, SidTypeUnknown, OWNER_SECURITY_INFORMATION, SECURITY_DESCRIPTOR,
+            SID_NAME_USE,
+        },
+        Storage::FileSystem::{
+            CreateFileW, FILE_ATTRIBUTE_NORMAL, FILE_GENERIC_READ, FILE_SHARE_READ, OPEN_EXISTING,
+        },
+    },
+};
 
-#[derive(StructOpt, Debug)]
-#[structopt(
-    about = "(d)irectory + rec(urse) => recursively acquire file metadata within a directory"
+#[derive(Parser, Debug)]
+#[clap(
+    about = "(d)irectory + rec(urse) => recursively acquire file metadata within a directory",
+    long_about = None
 )]
 pub struct Args {
     /// Directory to begin recursive walk, begin in current directory if no value provided
-    #[structopt()]
+    #[clap()]
     pub path: Option<PathBuf>,
     /// Path to file to write results, writes to stdout if not present
-    #[structopt(long, short, parse(from_os_str))]
+    #[clap(long, short, parse(from_os_str))]
     pub file_name: Option<PathBuf>,
     /// Output type, defaults to csv if not provided
-    #[structopt(long, short, default_value = "csv", possible_values = &OutType::variants(), case_insensitive = true)]
+    #[clap(arg_enum, long, short, default_value = "csv", ignore_case = true)]
     pub out_type: OutType,
 }
 
-arg_enum! {
-    #[derive(Debug)]
-    #[allow(non_camel_case_types)]
-    pub enum OutType {
-        csv,
-        ndjson
-    }
+#[derive(ArgEnum, Clone, Debug)]
+#[allow(non_camel_case_types)]
+pub enum OutType {
+    csv,
+    ndjson
 }
 
 #[derive(Debug, Serialize)]
@@ -44,15 +60,18 @@ pub struct Record<'a> {
     pub full_name: String,
     pub name: String,
     pub base_name: String,
+    pub is_directory: bool,
     pub extension: String,
     pub directory_name: String,
     pub creation_time: DateTime<Local>,
     pub last_access_time: DateTime<Local>,
     pub last_modified_time: DateTime<Local>,
+    pub owner: String,
     pub size: u64,
     pub size_kb: f64,
     pub size_mb: f64,
     pub size_gb: f64,
+    pub size_tb: f64,
 }
 
 #[derive(Debug)]
@@ -119,22 +138,168 @@ impl RecordSet<'_> {
     }
 }
 
+#[derive(Debug)]
+struct WideString(Vec<u16>);
+
+impl WideString {
+    fn as_const_ptr(&self) -> *const u16 {
+        let s_ref: &Vec<u16> = &self.0.as_ref();
+        s_ref.as_ptr() as *const u16
+    }
+
+    fn as_ptr(&self) -> *mut u16 {
+        let s_ref: &Vec<u16> = &self.0.as_ref();
+        s_ref.as_ptr() as *mut u16
+    }
+
+    fn from_os_str(s: &OsStr) -> Self {
+        Self(s.encode_wide().chain(std::iter::once(0)).collect())
+    }
+
+    #[allow(dead_code)]
+    fn from_str(s: &str) -> Self {
+        Self(s.encode_utf16().chain(std::iter::once(0)).collect())
+    }
+
+    fn new(capacity: usize) -> Self {
+        let mut v: Vec<u16> = Vec::default();
+        v.resize(capacity, 0);
+        Self(v)
+    }
+
+    #[allow(dead_code)]
+    fn to_string(&self) -> Result<String, FromUtf16Error> {
+        let v = &self.0;
+        String::from_utf16(&v[..(v.len() - 1)]) // remove trailing null
+    }
+}
+
+#[cfg(target_os = "windows")]
+fn get_file_owner(path: &PathBuf) -> Result<String, Box<dyn Error>> {
+    let path_as_wstring = WideString::from_os_str(path.as_os_str());
+    let path_as_wstring_ptr = path_as_wstring.as_const_ptr();
+    let path_as_pcwstr = PCWSTR(path_as_wstring_ptr);
+
+    // File handle
+    let handle: HANDLE = unsafe {
+        CreateFileW(
+            path_as_pcwstr,
+            FILE_GENERIC_READ,
+            FILE_SHARE_READ,
+            std::ptr::null_mut(),
+            OPEN_EXISTING,
+            FILE_ATTRIBUTE_NORMAL,
+            None,
+        )
+    };
+
+    if let Err(e) = handle.ok() {
+        panic!("Error with {:#?}: {:#?}", path_as_pcwstr, e);
+    }
+
+    // Security Info
+    let mut psidowner = PSID::default();
+    let mut sd: *mut SECURITY_DESCRIPTOR =
+        &mut SECURITY_DESCRIPTOR::default() as *mut SECURITY_DESCRIPTOR;
+
+    let gsi_rc = unsafe {
+        GetSecurityInfo(
+            handle,
+            SE_FILE_OBJECT,
+            OWNER_SECURITY_INFORMATION.0,
+            &mut psidowner,
+            std::ptr::null_mut(),
+            std::ptr::null_mut(),
+            std::ptr::null_mut(),
+            &mut sd,
+        )
+    };
+
+    if gsi_rc != ERROR_SUCCESS.0 {
+        let last_error = unsafe { GetLastError() };
+        panic!("Error code is {:#?}", last_error);
+    }
+
+    // Lookup Account Sid
+    let mut name_size = 0 as u32;
+    let mut domain_size = 0 as u32;
+
+    let name_as_wstring = WideString::new(name_size as usize);
+    let name_as_wstring_ptr = name_as_wstring.as_ptr();
+    let name_as_pwstr = PWSTR(name_as_wstring_ptr);
+
+    let domain_as_wstring = WideString::new(domain_size as usize);
+    let domain_as_wstring_ptr = domain_as_wstring.as_ptr();
+    let domain_as_pwstr = PWSTR(domain_as_wstring_ptr);
+
+    let euse = &mut SidTypeUnknown.to_owned() as *mut SID_NAME_USE;
+
+    // Call to get size of name_size and domain_size
+    let las_rc = unsafe {
+        LookupAccountSidW(
+            None,
+            psidowner,
+            name_as_pwstr,
+            &mut name_size,
+            domain_as_pwstr,
+            &mut domain_size,
+            euse,
+        )
+    };
+
+    if las_rc.0 != 0 {
+        panic!("Expecting an error when calling LookupAccountSidW initially");
+    }
+
+    // Call again, this time with appropriately sized buffers
+    let name_as_wstring = WideString::new(name_size as usize);
+    let name_as_wstring_ptr = name_as_wstring.as_ptr();
+    let name_as_pwstr = PWSTR(name_as_wstring_ptr);
+
+    let domain_as_wstring = WideString::new(domain_size as usize);
+    let domain_as_wstring_ptr = domain_as_wstring.as_ptr();
+    let domain_as_pwstr = PWSTR(domain_as_wstring_ptr);
+
+    let las_rc = unsafe {
+        LookupAccountSidW(
+            None,
+            psidowner,
+            name_as_pwstr,
+            &mut name_size,
+            domain_as_pwstr,
+            &mut domain_size,
+            euse,
+        )
+    };
+
+    if las_rc.0 == 0 {
+        let last_error = unsafe { GetLastError() };
+        panic!("Error code is {:#?}", last_error);
+    }
+    
+    let owner = name_as_wstring.to_string()?;
+
+    Ok(owner)
+}
+
 pub fn run(args: Args) -> Result<(), Box<dyn Error>> {
     // Implement the following:
     //   - RunDate
     //   - FullName
     //   - Name
+    //   - IsDirectory
     //   - Basename
     //   - Extension
     //   - DirectoryName
     //   - CreationTime
     //   - LastAccessTime
     //   - LastWriteTime
-    //   - ** Owner **
+    //   - Owner
     //   - Size B
-    //   - Size KB (distinguish Kilobytes from Kibibytes)
-    //   - Size MB
-    //   - Size GB
+    //   - Size KB (distinguish kilobytes from kibibytes)
+    //   - Size MB (distinguish megaytes from mebibytes)
+    //   - Size GB (distinguish gigabytes from gibibytes)
+    //   - Size TB (distinguish terabytes from tebibytes)
 
     // Process args
     let path = &args.path.unwrap_or(std::env::current_dir()?);
@@ -159,10 +324,6 @@ pub fn run(args: Args) -> Result<(), Box<dyn Error>> {
     }
 
     Ok(())
-
-    /*
-    println!("persmissions: {:?}", md.permissions());
-    */
 }
 
 fn file_name_valid(f: &Option<PathBuf>) -> Result<(bool, String), Box<dyn Error>> {
@@ -203,6 +364,7 @@ fn get_metadata<'a>(
         .and_then(|b| b.to_str())
         .unwrap_or_default()
         .to_owned();
+    let is_directory = path.is_dir();
     let extension = path
         .extension()
         .and_then(|e| e.to_str())
@@ -222,28 +384,40 @@ fn get_metadata<'a>(
     // Unix => mtime field of stat
     // Windows => ftLastWriteTime field
     let last_modified_time: DateTime<Local> = DateTime::from(md.modified()?);
+    //let owner = String::from("");
+    let owner = if cfg!(windows) {
+        get_file_owner(&path)?
+    } else {
+        String::from("")
+    };
+    // let owner = std::fs::metadata(path)?.uid();
     let size = md.len();
     // kibibyes
-    let size_kb = (md.len() as f64) / 1024_f64.powi(2);
+    let size_kb = (md.len() as f64) / 1024_f64.powi(1);
     // mebibytes
-    let size_mb = (md.len() as f64) / 1024_f64.powi(3);
+    let size_mb = (md.len() as f64) / 1024_f64.powi(2);
     // gibibytes
-    let size_gb = (md.len() as f64) / 1024_f64.powi(4);
+    let size_gb = (md.len() as f64) / 1024_f64.powi(3);
+    // tebibytes
+    let size_tb = (md.len() as f64) / 1024_f64.powi(4);
 
     Ok(Record {
         run_date,
         full_name,
         name,
         base_name,
+        is_directory,
         extension,
         directory_name,
         creation_time,
         last_access_time,
         last_modified_time,
+        owner,
         size,
         size_kb,
         size_mb,
         size_gb,
+        size_tb,
     })
 }
 
@@ -269,14 +443,4 @@ fn walk_dir(
 
     records.write()?;
     Ok(())
-}
-
-#[cfg(test)]
-mod tests {
-    // use super::*;
-
-    #[test]
-    fn minimal() {
-        assert_eq!(1, 1)
-    }
 }
